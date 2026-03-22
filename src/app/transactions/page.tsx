@@ -8,7 +8,6 @@ import { z } from "zod"
 import Cookies from "js-cookie"
 import { toast } from "sonner"
 import {
-  LogOutIcon,
   TrendingUpIcon,
   TrendingDownIcon,
   ArrowRightLeftIcon,
@@ -19,19 +18,7 @@ import {
   LoaderIcon,
 } from "lucide-react"
 
-import { AppSidebar } from "@/components/app-sidebar"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-} from "@/components/ui/breadcrumb"
-import { Separator } from "@/components/ui/separator"
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar"
+import { PageShell, PageShellSkeleton } from "@/components/page-shell"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -130,7 +117,6 @@ export default function TransactionsPage() {
   const [accounts, setAccounts] = useState<Account[]>([])
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
-  const [now, setNow] = useState(new Date())
 
   // New Transaction dialog
   const [addTxOpen, setAddTxOpen] = useState(false)
@@ -161,11 +147,6 @@ export default function TransactionsPage() {
   const [filterEnd, setFilterEnd] = useState("")
 
   useEffect(() => {
-    const timer = setInterval(() => setNow(new Date()), 1000)
-    return () => clearInterval(timer)
-  }, [])
-
-  useEffect(() => {
     getCategories()
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .then((res) => setCategories((res as any)?.categories ?? []))
@@ -185,9 +166,12 @@ export default function TransactionsPage() {
         getAccounts(),
         getTransactions(filters),
       ])
-      setUser(meRes.user)
-      setAccounts(accRes.accounts ?? [])
-      setTransactions(txRes.transactions ?? [])
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setUser((meRes as any)?.user ?? null)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setAccounts((accRes as any)?.accounts ?? [])
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setTransactions((txRes as any)?.transactions ?? [])
     } catch (err) {
       if (err instanceof AuthError) {
         Cookies.remove("token")
@@ -304,66 +288,18 @@ export default function TransactionsPage() {
 
   if (loading) {
     return (
-      <SidebarProvider>
-        <AppSidebar user={{ name: "", email: "", avatar: "" }} />
-        <SidebarInset>
-          <div className="flex flex-1 flex-col gap-4 p-6">
-            <Skeleton className="h-8 w-48" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-64 w-full" />
-          </div>
-        </SidebarInset>
-      </SidebarProvider>
+      <PageShellSkeleton>
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-64 w-full" />
+      </PageShellSkeleton>
     )
   }
 
   return (
-    <SidebarProvider>
-      <AppSidebar
-        user={{ name: user?.name ?? "", email: user?.email ?? "", avatar: "" }}
-      />
-      <SidebarInset>
-        {/* Header */}
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator
-            orientation="vertical"
-            className="mr-2 data-vertical:h-4 data-vertical:self-auto"
-          />
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbPage>Transactions</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-          <div className="ml-auto flex items-center gap-3">
-            <div className="hidden flex-col items-end sm:flex">
-              <span className="text-sm font-semibold tabular-nums leading-none">
-                {now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
-              </span>
-              <span className="mt-0.5 text-xs text-muted-foreground">
-                {now.toLocaleDateString([], { weekday: "short", year: "numeric", month: "short", day: "numeric" })}
-              </span>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-2 text-muted-foreground hover:text-foreground"
-              onClick={() => {
-                Cookies.remove("token")
-                router.push("/login")
-              }}
-            >
-              <LogOutIcon className="size-4" />
-              <span className="hidden sm:inline">Log out</span>
-            </Button>
-          </div>
-        </header>
-
-        <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
-          {/* Page title + summary + action */}
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <PageShell user={user} title="Transactions">
+      {/* Page title + summary + action */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex flex-col gap-1">
               <h1 className="text-2xl font-bold tracking-tight">Transactions</h1>
               <p className="text-sm text-muted-foreground">
@@ -610,7 +546,7 @@ export default function TransactionsPage() {
             </div>
           </div>
 
-          {/* Table */}
+          {/* Table / Cards */}
           {transactions.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed py-16 text-center">
               <ArrowRightLeftIcon className="size-10 text-muted-foreground/40" />
@@ -620,55 +556,118 @@ export default function TransactionsPage() {
               </p>
             </div>
           ) : (
-            <div className="overflow-hidden rounded-lg border border-border">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border bg-muted/50">
-                      <th className="px-4 py-3 text-left font-medium text-muted-foreground">Date</th>
-                      <th className="px-4 py-3 text-left font-medium text-muted-foreground">Type</th>
-                      <th className="px-4 py-3 text-left font-medium text-muted-foreground">Account</th>
-                      <th className="px-4 py-3 text-left font-medium text-muted-foreground">Category</th>
-                      <th className="px-4 py-3 text-left font-medium text-muted-foreground">Description</th>
-                      <th className="px-4 py-3 text-right font-medium text-muted-foreground">Amount</th>
-                      <th className="w-12 px-4 py-3"><span className="sr-only">Actions</span></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {transactions.map((tx, i) => {
-                      const cfg = TYPE_CONFIG[tx.type]
-                      const Icon = cfg.icon
-                      return (
-                        <tr
-                          key={tx.id}
-                          className={`border-b border-border last:border-0 transition-colors hover:bg-muted/30 ${
-                            i % 2 === 0 ? "" : "bg-muted/10"
-                          }`}
-                        >
-                          <td className="whitespace-nowrap px-4 py-3 tabular-nums text-muted-foreground">
-                            {new Date(tx.date).toLocaleDateString([], {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            })}
-                          </td>
-                          <td className="px-4 py-3">
+            <>
+              {/* Desktop table */}
+              <div className="hidden md:block overflow-hidden rounded-lg border border-border">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border bg-muted/50">
+                        <th className="px-4 py-3 text-left font-medium text-muted-foreground">Date</th>
+                        <th className="px-4 py-3 text-left font-medium text-muted-foreground">Type</th>
+                        <th className="px-4 py-3 text-left font-medium text-muted-foreground">Account</th>
+                        <th className="px-4 py-3 text-left font-medium text-muted-foreground">Category</th>
+                        <th className="px-4 py-3 text-left font-medium text-muted-foreground">Description</th>
+                        <th className="px-4 py-3 text-right font-medium text-muted-foreground">Amount</th>
+                        <th className="w-12 px-4 py-3"><span className="sr-only">Actions</span></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {transactions.map((tx, i) => {
+                        const cfg = TYPE_CONFIG[tx.type]
+                        const Icon = cfg.icon
+                        return (
+                          <tr
+                            key={tx.id}
+                            className={`border-b border-border last:border-0 transition-colors hover:bg-muted/30 ${
+                              i % 2 === 0 ? "" : "bg-muted/10"
+                            }`}
+                          >
+                            <td className="whitespace-nowrap px-4 py-3 tabular-nums text-muted-foreground">
+                              {new Date(tx.date).toLocaleDateString([], {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              })}
+                            </td>
+                            <td className="px-4 py-3">
+                              <span
+                                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${cfg.badge}`}
+                              >
+                                <Icon className="size-3" />
+                                {cfg.label}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 font-medium">{tx.account_name}</td>
+                            <td className="px-4 py-3 text-muted-foreground">
+                              {tx.category || <span className="text-muted-foreground/40">—</span>}
+                            </td>
+                            <td className="max-w-xs truncate px-4 py-3 text-muted-foreground">
+                              {tx.description || <span className="text-muted-foreground/40">—</span>}
+                            </td>
+                            <td
+                              className={`whitespace-nowrap px-4 py-3 text-right font-semibold tabular-nums ${
+                                tx.type === "income"
+                                  ? "text-green-600"
+                                  : tx.type === "expense"
+                                  ? "text-red-500"
+                                  : "text-blue-500"
+                              }`}
+                            >
+                              {tx.type === "income" ? "+" : tx.type === "expense" ? "-" : ""}{formatCurrency(tx.amount)}
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="size-8 p-0 text-muted-foreground hover:text-destructive"
+                                onClick={() => setDeleteTarget(tx)}
+                              >
+                                <Trash2Icon className="size-4" />
+                                <span className="sr-only">Delete</span>
+                              </Button>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Mobile cards */}
+              <div className="flex flex-col gap-2 md:hidden">
+                {transactions.map((tx) => {
+                  const cfg = TYPE_CONFIG[tx.type]
+                  const Icon = cfg.icon
+                  return (
+                    <div
+                      key={tx.id}
+                      className="rounded-lg border border-border bg-card p-3 active:bg-muted/30 transition-colors"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
                             <span
-                              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${cfg.badge}`}
+                              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${cfg.badge}`}
                             >
                               <Icon className="size-3" />
                               {cfg.label}
                             </span>
-                          </td>
-                          <td className="px-4 py-3 font-medium">{tx.account_name}</td>
-                          <td className="px-4 py-3 text-muted-foreground">
-                            {tx.category || <span className="text-muted-foreground/40">—</span>}
-                          </td>
-                          <td className="max-w-xs truncate px-4 py-3 text-muted-foreground">
-                            {tx.description || <span className="text-muted-foreground/40">—</span>}
-                          </td>
-                          <td
-                            className={`whitespace-nowrap px-4 py-3 text-right font-semibold tabular-nums ${
+                            <span className="text-[10px] text-muted-foreground tabular-nums">
+                              {new Date(tx.date).toLocaleDateString([], { month: "short", day: "numeric" })}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-sm font-medium truncate">{tx.account_name}</p>
+                          <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
+                            {tx.category && <span>{tx.category}</span>}
+                            {tx.category && tx.description && <span>·</span>}
+                            {tx.description && <span className="truncate">{tx.description}</span>}
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-1 shrink-0">
+                          <span
+                            className={`text-sm font-semibold tabular-nums ${
                               tx.type === "income"
                                 ? "text-green-600"
                                 : tx.type === "expense"
@@ -677,27 +676,24 @@ export default function TransactionsPage() {
                             }`}
                           >
                             {tx.type === "income" ? "+" : tx.type === "expense" ? "-" : ""}{formatCurrency(tx.amount)}
-                          </td>
-                          <td className="px-4 py-3 text-right">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="size-8 p-0 text-muted-foreground hover:text-destructive"
-                              onClick={() => setDeleteTarget(tx)}
-                            >
-                              <Trash2Icon className="size-4" />
-                              <span className="sr-only">Delete</span>
-                            </Button>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="size-7 p-0 text-muted-foreground hover:text-destructive"
+                            onClick={() => setDeleteTarget(tx)}
+                          >
+                            <Trash2Icon className="size-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
-            </div>
+            </>
           )}
-        </div>
+
 
         {/* Delete Confirmation Dialog */}
         <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}>
@@ -724,7 +720,6 @@ export default function TransactionsPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      </SidebarInset>
-    </SidebarProvider>
+    </PageShell>
   )
 }

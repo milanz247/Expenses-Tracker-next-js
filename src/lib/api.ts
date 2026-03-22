@@ -26,7 +26,7 @@ async function request(endpoint: string, options: RequestInit = {}) {
     headers,
   });
 
-  let data: Record<string, string> | null = null;
+  let data: Record<string, unknown> | null = null;
   const contentType = res.headers.get("content-type");
   if (contentType?.includes("application/json")) {
     data = await res.json();
@@ -36,11 +36,11 @@ async function request(endpoint: string, options: RequestInit = {}) {
   }
 
   if (res.status === 401 || res.status === 403) {
-    throw new AuthError(data.error || "Session expired. Please log in again.");
+    throw new AuthError((data as Record<string, string>)?.error || "Session expired. Please log in again.");
   }
 
   if (!res.ok) {
-    throw new Error(data.error || "Something went wrong");
+    throw new Error((data as Record<string, string>)?.error || "Something went wrong");
   }
 
   return data;

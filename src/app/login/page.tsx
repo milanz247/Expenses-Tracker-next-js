@@ -42,7 +42,8 @@ export default function LoginPage() {
 
     try {
       const res = await loginUser(data.email, data.password);
-      Cookies.set("token", res.token, { expires: 1, sameSite: "lax" });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      Cookies.set("token", (res as any)?.token, { expires: 1, sameSite: "lax" });
       router.replace("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");

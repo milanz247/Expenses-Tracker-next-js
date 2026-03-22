@@ -5,6 +5,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "next-themes";
 import { PreferencesProvider } from "@/lib/preferences";
+import { BottomNav } from "@/components/bottom-nav";
+import Script from "next/script";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,6 +17,7 @@ export const viewport: Viewport = {
   themeColor: "#0a0a0a",
   width: "device-width",
   initialScale: 1,
+  viewportFit: "cover",
 };
 
 export const metadata: Metadata = {
@@ -43,10 +46,16 @@ export default function RootLayout({
           <PreferencesProvider>
             <TooltipProvider>
               {children}
+              <BottomNav />
               <Toaster richColors position="top-right" />
             </TooltipProvider>
           </PreferencesProvider>
         </ThemeProvider>
+        <Script id="sw-register" strategy="afterInteractive">{`
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js');
+          }
+        `}</Script>
       </body>
     </html>
   )

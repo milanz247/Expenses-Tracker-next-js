@@ -11,26 +11,13 @@ import { toast } from "sonner"
 import {
   PlusIcon,
   TagIcon,
-  LogOutIcon,
   TrendingUpIcon,
   TrendingDownIcon,
   ArrowRightLeftIcon,
   Trash2Icon,
 } from "lucide-react"
 
-import { AppSidebar } from "@/components/app-sidebar"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-} from "@/components/ui/breadcrumb"
-import { Separator } from "@/components/ui/separator"
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar"
+import { PageShell, PageShellSkeleton } from "@/components/page-shell"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -82,23 +69,19 @@ export default function CategoriesPage() {
   const [loading, setLoading] = useState(true)
   const [open, setOpen] = useState(false)
   const [deletingId, setDeletingId] = useState<number | null>(null)
-  const [now, setNow] = useState(new Date())
 
   const form = useForm<CategoryFormData>({
     resolver: zodResolver(categorySchema) as Resolver<CategoryFormData>,
     defaultValues: { name: "", type: "expense" },
   })
 
-  useEffect(() => {
-    const timer = setInterval(() => setNow(new Date()), 1000)
-    return () => clearInterval(timer)
-  }, [])
-
   const fetchData = useCallback(async () => {
     try {
       const [meRes, catRes] = await Promise.all([getMe(), getCategories()])
-      setUser(meRes.user)
-      setCategories(catRes.categories ?? [])
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setUser((meRes as any)?.user ?? null)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setCategories((catRes as any)?.categories ?? [])
     } catch (err) {
       if (err instanceof AuthError) {
         Cookies.remove("token")
@@ -140,16 +123,11 @@ export default function CategoriesPage() {
 
   if (loading) {
     return (
-      <SidebarProvider>
-        <AppSidebar user={{ name: "", email: "", avatar: "" }} />
-        <SidebarInset>
-          <div className="flex flex-1 flex-col gap-4 p-6">
-            <Skeleton className="h-8 w-48" />
-            <Skeleton className="h-10 w-40" />
-            <Skeleton className="h-64 w-full" />
-          </div>
-        </SidebarInset>
-      </SidebarProvider>
+      <PageShellSkeleton>
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-10 w-40" />
+        <Skeleton className="h-64 w-full" />
+      </PageShellSkeleton>
     )
   }
 
@@ -160,50 +138,7 @@ export default function CategoriesPage() {
   }))
 
   return (
-    <SidebarProvider>
-      <AppSidebar
-        user={{ name: user?.name ?? "", email: user?.email ?? "", avatar: "" }}
-      />
-      <SidebarInset>
-        {/* Header */}
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator
-            orientation="vertical"
-            className="mr-2 data-vertical:h-4 data-vertical:self-auto"
-          />
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbPage>Categories</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-          <div className="ml-auto flex items-center gap-3">
-            <div className="hidden flex-col items-end sm:flex">
-              <span className="text-sm font-semibold tabular-nums leading-none">
-                {now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
-              </span>
-              <span className="mt-0.5 text-xs text-muted-foreground">
-                {now.toLocaleDateString([], { weekday: "short", year: "numeric", month: "short", day: "numeric" })}
-              </span>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-2 text-muted-foreground hover:text-foreground"
-              onClick={() => {
-                Cookies.remove("token")
-                router.push("/login")
-              }}
-            >
-              <LogOutIcon className="size-4" />
-              <span className="hidden sm:inline">Log out</span>
-            </Button>
-          </div>
-        </header>
-
-        <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+    <PageShell user={user} title="Categories">
           {/* Page heading + add button */}
           <div className="flex items-center justify-between">
             <div>
@@ -313,8 +248,6 @@ export default function CategoriesPage() {
               })}
             </div>
           )}
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+    </PageShell>
   )
 }

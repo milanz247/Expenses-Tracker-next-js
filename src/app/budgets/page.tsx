@@ -11,24 +11,11 @@ import { toast } from "sonner"
 import {
   PlusIcon,
   PiggyBankIcon,
-  LogOutIcon,
   Trash2Icon,
   PencilIcon,
 } from "lucide-react"
 
-import { AppSidebar } from "@/components/app-sidebar"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-} from "@/components/ui/breadcrumb"
-import { Separator } from "@/components/ui/separator"
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar"
+import { PageShell, PageShellSkeleton } from "@/components/page-shell"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -84,17 +71,11 @@ export default function BudgetsPage() {
   const [open, setOpen] = useState(false)
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null)
   const [deletingId, setDeletingId] = useState<number | null>(null)
-  const [now, setNow] = useState(new Date())
 
   const form = useForm<BudgetFormData>({
     resolver: zodResolver(budgetSchema) as Resolver<BudgetFormData>,
     defaultValues: { category_id: 0, amount: 0 },
   })
-
-  useEffect(() => {
-    const timer = setInterval(() => setNow(new Date()), 1000)
-    return () => clearInterval(timer)
-  }, [])
 
   const fetchData = useCallback(async () => {
     try {
@@ -173,68 +154,20 @@ export default function BudgetsPage() {
 
   if (loading) {
     return (
-      <SidebarProvider>
-        <AppSidebar user={{ name: "", email: "", avatar: "" }} />
-        <SidebarInset>
-          <div className="flex flex-1 flex-col gap-4 p-6">
-            <Skeleton className="h-8 w-48" />
-            <Skeleton className="h-10 w-40" />
-            <Skeleton className="h-64 w-full" />
-          </div>
-        </SidebarInset>
-      </SidebarProvider>
+      <PageShellSkeleton>
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-10 w-40" />
+        <Skeleton className="h-64 w-full" />
+      </PageShellSkeleton>
     )
   }
 
   const currentMonth = new Date().toLocaleDateString([], { month: "long", year: "numeric" })
 
   return (
-    <SidebarProvider>
-      <AppSidebar
-        user={{ name: user?.name ?? "", email: user?.email ?? "", avatar: "" }}
-      />
-      <SidebarInset>
-        {/* Header */}
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator
-            orientation="vertical"
-            className="mr-2 data-vertical:h-4 data-vertical:self-auto"
-          />
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbPage>Budgets</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-          <div className="ml-auto flex items-center gap-3">
-            <div className="hidden flex-col items-end sm:flex">
-              <span className="text-sm font-semibold tabular-nums leading-none">
-                {now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
-              </span>
-              <span className="mt-0.5 text-xs text-muted-foreground">
-                {now.toLocaleDateString([], { weekday: "short", year: "numeric", month: "short", day: "numeric" })}
-              </span>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-2 text-muted-foreground hover:text-foreground"
-              onClick={() => {
-                Cookies.remove("token")
-                router.push("/login")
-              }}
-            >
-              <LogOutIcon className="size-4" />
-              <span className="hidden sm:inline">Log out</span>
-            </Button>
-          </div>
-        </header>
-
-        <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
-          {/* Page heading + add button */}
-          <div className="flex items-center justify-between">
+    <PageShell user={user} title="Budgets">
+      {/* Page heading + add button */}
+      <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold tracking-tight">Budgets</h1>
               <p className="text-sm text-muted-foreground">
@@ -377,8 +310,6 @@ export default function BudgetsPage() {
               })}
             </div>
           )}
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+    </PageShell>
   )
 }

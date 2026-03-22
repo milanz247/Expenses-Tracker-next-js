@@ -127,3 +127,25 @@
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom);
 }
+
+/* Bottom nav spacing for mobile pages */
+@media (max-width: 767px) {
+  .page-content {
+    padding-bottom: 5rem;
+  }
+}
+
+/* Touch-friendly: larger tap targets on mobile */
+@media (max-width: 767px) {
+  button:not([data-sidebar]):not([class*="size-"]),
+  [role="button"]:not([data-sidebar]):not([class*="size-"]),
+  a[href]:not([class*="size-"]) {
+    min-height: 44px;
+  }
+  input,
+  select,
+  textarea {
+    min-height: 44px;
+    font-size: 16px; /* prevents iOS zoom */
+  }
+}

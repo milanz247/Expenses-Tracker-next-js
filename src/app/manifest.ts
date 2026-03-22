@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Expense Tracker",
     short_name: "Expenses",
     description: "Track your personal expenses",
-    start_url: "/",
+    start_url: "/dashboard",
     display: "standalone",
     background_color: "#ffffff",
     theme_color: "#0a0a0a",
@@ -23,6 +23,14 @@ export default function manifest(): MetadataRoute.Manifest {
         sizes: "any",
         type: "image/svg+xml",
         purpose: "maskable",
+      },
+    ],
+    screenshots: [
+      {
+        src: "/icons/icon.svg",
+        sizes: "512x512",
+        type: "image/svg+xml",
+        form_factor: "wide",
       },
     ],
   };

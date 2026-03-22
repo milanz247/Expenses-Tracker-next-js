@@ -13,22 +13,9 @@ import {
   WalletIcon,
   BanknoteIcon,
   CreditCardIcon,
-  LogOutIcon,
 } from "lucide-react"
 
-import { AppSidebar } from "@/components/app-sidebar"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-} from "@/components/ui/breadcrumb"
-import { Separator } from "@/components/ui/separator"
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar"
+import { PageShell, PageShellSkeleton } from "@/components/page-shell"
 import {
   Card,
   CardContent,
@@ -78,7 +65,6 @@ export default function AccountsPage() {
   const [fetchError, setFetchError] = useState("")
   const [addAccOpen, setAddAccOpen] = useState(false)
   const [accountType, setAccountType] = useState<"wallet" | "bank" | "card">("wallet")
-  const [now, setNow] = useState(new Date())
 
   const accountForm = useForm<AccountFormData>({
     resolver: zodResolver(accountSchema) as Resolver<AccountFormData>,
@@ -88,8 +74,10 @@ export default function AccountsPage() {
   const fetchData = useCallback(async () => {
     try {
       const [meRes, accRes] = await Promise.all([getMe(), getAccounts()])
-      setUser(meRes.user)
-      setAccounts(accRes.accounts ?? [])
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setUser((meRes as any)?.user ?? null)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setAccounts((accRes as any)?.accounts ?? [])
       setFetchError("")
     } catch (err) {
       if (err instanceof AuthError) {
@@ -107,11 +95,6 @@ export default function AccountsPage() {
     fetchData()
   }, [fetchData])
 
-  useEffect(() => {
-    const timer = setInterval(() => setNow(new Date()), 1000)
-    return () => clearInterval(timer)
-  }, [])
-
   async function onAddAccount(data: AccountFormData) {
     try {
       await createAccount({ name: data.name, type: accountType, balance: data.balance })
@@ -127,67 +110,20 @@ export default function AccountsPage() {
 
   if (loading) {
     return (
-      <SidebarProvider>
-        <AppSidebar user={{ name: "", email: "", avatar: "" }} />
-        <SidebarInset>
-          <div className="flex flex-1 flex-col gap-6 p-6">
-            <Skeleton className="h-8 w-48" />
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <Skeleton className="h-32" />
-              <Skeleton className="h-32" />
-              <Skeleton className="h-32" />
-            </div>
-          </div>
-        </SidebarInset>
-      </SidebarProvider>
+      <PageShellSkeleton>
+        <Skeleton className="h-8 w-48" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
+        </div>
+      </PageShellSkeleton>
     )
   }
 
   return (
-    <SidebarProvider>
-      <AppSidebar
-        user={{ name: user?.name ?? "", email: user?.email ?? "", avatar: "" }}
-      />
-      <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator
-            orientation="vertical"
-            className="mr-2 data-vertical:h-4 data-vertical:self-auto"
-          />
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbPage>Accounts</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-          <div className="ml-auto flex items-center gap-3">
-            <div className="hidden flex-col items-end sm:flex">
-              <span className="text-sm font-semibold tabular-nums leading-none">
-                {now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
-              </span>
-              <span className="mt-0.5 text-xs text-muted-foreground">
-                {now.toLocaleDateString([], { weekday: "short", year: "numeric", month: "short", day: "numeric" })}
-              </span>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-2 text-muted-foreground hover:text-foreground"
-              onClick={() => {
-                Cookies.remove("token")
-                router.push("/login")
-              }}
-            >
-              <LogOutIcon className="size-4" />
-              <span className="hidden sm:inline">Log out</span>
-            </Button>
-          </div>
-        </header>
-
-        <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
-          {fetchError && (
+    <PageShell user={user} title="Accounts">
+      {fetchError && (
             <div className="rounded-md bg-destructive/10 px-4 py-3 text-sm text-destructive">
               {fetchError}
             </div>
@@ -329,8 +265,6 @@ export default function AccountsPage() {
               })}
             </div>
           )}
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+    </PageShell>
   )
 }

@@ -10,7 +10,6 @@ import Cookies from "js-cookie"
 import { toast } from "sonner"
 import { useTheme } from "next-themes"
 import {
-  LogOutIcon,
   UserIcon,
   ShieldIcon,
   SettingsIcon,
@@ -18,19 +17,7 @@ import {
   MoonIcon,
 } from "lucide-react"
 
-import { AppSidebar } from "@/components/app-sidebar"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-} from "@/components/ui/breadcrumb"
-import { Separator } from "@/components/ui/separator"
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar"
+import { PageShell, PageShellSkeleton } from "@/components/page-shell"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -75,7 +62,6 @@ export default function SettingsPage() {
   const { currency, language, setCurrency, setLanguage } = usePreferences()
   const [user, setUser] = useState<{ name: string; email: string; profile_pic?: string } | null>(null)
   const [loading, setLoading] = useState(true)
-  const [now, setNow] = useState(new Date())
   const [activeTab, setActiveTab] = useState<"profile" | "preferences">("profile")
 
   // Preferences local state (synced with context)
@@ -92,11 +78,6 @@ export default function SettingsPage() {
     resolver: zodResolver(passwordSchema) as Resolver<PasswordFormData>,
     defaultValues: { old_password: "", new_password: "", confirm_password: "" },
   })
-
-  useEffect(() => {
-    const timer = setInterval(() => setNow(new Date()), 1000)
-    return () => clearInterval(timer)
-  }, [])
 
   useEffect(() => {
     setPrefCurrency(currency)
@@ -175,70 +156,24 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <SidebarProvider>
-        <AppSidebar user={{ name: "", email: "", avatar: "" }} />
-        <SidebarInset>
-          <div className="flex flex-1 flex-col gap-4 p-6">
-            <Skeleton className="h-8 w-48" />
-            <Skeleton className="h-64 w-full" />
-          </div>
-        </SidebarInset>
-      </SidebarProvider>
+      <PageShellSkeleton>
+        <div className="flex flex-1 flex-col gap-4 p-6">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-64 w-full" />
+        </div>
+      </PageShellSkeleton>
     )
   }
 
   return (
-    <SidebarProvider>
-      <AppSidebar
-        user={{ name: user?.name ?? "", email: user?.email ?? "", avatar: "" }}
-      />
-      <SidebarInset>
-        {/* Header */}
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator
-            orientation="vertical"
-            className="mr-2 data-vertical:h-4 data-vertical:self-auto"
-          />
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbPage>Settings</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-          <div className="ml-auto flex items-center gap-3">
-            <div className="hidden flex-col items-end sm:flex">
-              <span className="text-sm font-semibold tabular-nums leading-none">
-                {now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
-              </span>
-              <span className="mt-0.5 text-xs text-muted-foreground">
-                {now.toLocaleDateString([], { weekday: "short", year: "numeric", month: "short", day: "numeric" })}
-              </span>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-2 text-muted-foreground hover:text-foreground"
-              onClick={() => {
-                Cookies.remove("token")
-                router.push("/login")
-              }}
-            >
-              <LogOutIcon className="size-4" />
-              <span className="hidden sm:inline">Log out</span>
-            </Button>
-          </div>
-        </header>
-
-        <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
-          <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
+    <PageShell user={{ name: user?.name ?? "", email: user?.email ?? "" }} title="Settings">
+          <h1 className="text-xl md:text-2xl font-bold tracking-tight">Settings</h1>
 
           {/* Tab bar */}
-          <div className="flex gap-1 rounded-lg bg-muted p-1 w-fit">
+          <div className="flex gap-1 rounded-lg bg-muted p-1 w-full sm:w-fit">
             <button
               onClick={() => setActiveTab("profile")}
-              className={`flex items-center gap-2 rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
+              className={`flex flex-1 sm:flex-none items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
                 activeTab === "profile"
                   ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
@@ -249,7 +184,7 @@ export default function SettingsPage() {
             </button>
             <button
               onClick={() => setActiveTab("preferences")}
-              className={`flex items-center gap-2 rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
+              className={`flex flex-1 sm:flex-none items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
                 activeTab === "preferences"
                   ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
@@ -485,8 +420,6 @@ export default function SettingsPage() {
               </Card>
             </div>
           )}
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+    </PageShell>
   )
 }

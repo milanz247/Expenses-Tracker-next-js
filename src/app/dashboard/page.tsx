@@ -20,7 +20,6 @@ import {
   CartesianGrid,
 } from "recharts"
 import {
-  LogOutIcon,
   ArrowRightLeftIcon,
   TrendingUpIcon,
   TrendingDownIcon,
@@ -30,19 +29,7 @@ import {
   HandCoinsIcon,
 } from "lucide-react"
 
-import { AppSidebar } from "@/components/app-sidebar"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-} from "@/components/ui/breadcrumb"
-import { Separator } from "@/components/ui/separator"
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar"
+import { PageShell, PageShellSkeleton } from "@/components/page-shell"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -151,7 +138,6 @@ export default function DashboardPage() {
   const [summary, setSummary] = useState<Summary>(defaultSummary)
   const [loading, setLoading] = useState(true)
   const [fetchError, setFetchError] = useState("")
-  const [now, setNow] = useState(new Date())
 
   // Transaction dialog state
   const [addTxOpen, setAddTxOpen] = useState(false)
@@ -208,11 +194,6 @@ export default function DashboardPage() {
 
   useEffect(() => { fetchData() }, [fetchData])
 
-  useEffect(() => {
-    const timer = setInterval(() => setNow(new Date()), 1000)
-    return () => clearInterval(timer)
-  }, [])
-
   function openDialog(type: "income" | "expense" | "transfer") {
     setTxType(type)
     setFromAccountId(0)
@@ -253,84 +234,44 @@ export default function DashboardPage() {
     }
   }
 
-  const hour = now.getHours()
+  const hour = new Date().getHours()
   const greeting = hour >= 17 ? "evening" : hour >= 12 ? "afternoon" : "morning"
 
   // ── Loading ────────────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <SidebarProvider>
-        <AppSidebar user={{ name: "", email: "", avatar: "" }} />
-        <SidebarInset>
-          <div className="flex flex-1 flex-col gap-6 p-6">
-            <Skeleton className="h-8 w-48" />
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <Skeleton className="h-32" />
-              <Skeleton className="h-32" />
-              <Skeleton className="h-32" />
-            </div>
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              <Skeleton className="h-72" />
-              <Skeleton className="h-72" />
-            </div>
-            <Skeleton className="h-48" />
-          </div>
-        </SidebarInset>
-      </SidebarProvider>
+      <PageShellSkeleton>
+        <Skeleton className="h-8 w-48" />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
+        </div>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <Skeleton className="h-72" />
+          <Skeleton className="h-72" />
+        </div>
+        <Skeleton className="h-48" />
+      </PageShellSkeleton>
     )
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <SidebarProvider>
-      <AppSidebar user={{ name: user?.name ?? "", email: user?.email ?? "", avatar: "" }} />
-      <SidebarInset>
-        {/* Header */}
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-2 data-vertical:h-4 data-vertical:self-auto" />
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbPage>Dashboard</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-          <div className="ml-auto flex items-center gap-3">
-            <div className="hidden flex-col items-end sm:flex">
-              <span className="text-sm font-semibold tabular-nums leading-none">
-                {now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
-              </span>
-              <span className="mt-0.5 text-xs text-muted-foreground">
-                {now.toLocaleDateString([], { weekday: "short", year: "numeric", month: "short", day: "numeric" })}
-              </span>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-2 text-muted-foreground hover:text-foreground"
-              onClick={() => { Cookies.remove("token"); router.push("/login") }}
-            >
-              <LogOutIcon className="size-4" />
-              <span className="hidden sm:inline">Log out</span>
-            </Button>
-          </div>
-        </header>
-
-        <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
-          {fetchError && (
+    <PageShell user={user} title="Dashboard">
+      {fetchError && (
             <div className="rounded-md bg-destructive/10 px-4 py-3 text-sm text-destructive">{fetchError}</div>
           )}
 
           {/* Welcome + quick action buttons */}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">
+              <h1 className="text-xl md:text-2xl font-bold tracking-tight">
                 Good {greeting}, {user?.name?.split(" ")[0]} 👋
               </h1>
               <p className="text-sm text-muted-foreground">Here&apos;s your financial overview</p>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="hidden sm:flex flex-wrap gap-2">
               <Button
                 size="sm"
                 variant="outline"
@@ -361,9 +302,9 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Stat cards */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <Card>
+          {/* Stat cards – horizontal scroll on mobile */}
+          <div className="flex gap-3 overflow-x-auto pb-1 sm:grid sm:grid-cols-3 sm:gap-4 sm:overflow-visible sm:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0">
+            <Card className="min-w-50 shrink-0 sm:min-w-0">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Total Balance</CardTitle>
                 <div className="flex size-9 items-center justify-center rounded-full bg-primary/10">
@@ -378,7 +319,7 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="min-w-50 shrink-0 sm:min-w-0">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Monthly Income</CardTitle>
                 <div className="flex size-9 items-center justify-center rounded-full bg-green-500/10">
@@ -393,7 +334,7 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="min-w-50 shrink-0 sm:min-w-0">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Monthly Expenses</CardTitle>
                 <div className="flex size-9 items-center justify-center rounded-full bg-red-500/10">
@@ -540,50 +481,90 @@ export default function DashboardPage() {
                   No transactions yet
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-border bg-muted/30">
-                        <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">Date</th>
-                        <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">Account</th>
-                        <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">Category</th>
-                        <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">Description</th>
-                        <th className="px-4 py-2.5 text-right text-xs font-medium text-muted-foreground">Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {summary.recent_transactions.map((tx) => (
-                        <tr key={tx.id} className="border-b border-border last:border-0 hover:bg-muted/20">
-                          <td className="whitespace-nowrap px-4 py-3 tabular-nums text-muted-foreground">
-                            {new Date(tx.date).toLocaleDateString([], { month: "short", day: "numeric" })}
-                          </td>
-                          <td className="px-4 py-3 font-medium">{tx.account_name}</td>
-                          <td className="px-4 py-3 text-muted-foreground">
-                            {tx.category || <span className="opacity-40">—</span>}
-                          </td>
-                          <td className="max-w-xs truncate px-4 py-3 text-muted-foreground">
-                            {tx.description || <span className="opacity-40">—</span>}
-                          </td>
-                          <td
-                            className={`whitespace-nowrap px-4 py-3 text-right font-semibold tabular-nums ${
-                              tx.type === "income"
-                                ? "text-green-600"
-                                : tx.type === "expense"
-                                ? "text-red-500"
-                                : "text-blue-500"
-                            }`}
-                          >
-                            {tx.type === "income" ? "+" : tx.type === "expense" ? "−" : ""}{formatCurrency(tx.amount)}
-                          </td>
+                <>
+                  {/* Desktop table */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-border bg-muted/30">
+                          <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">Date</th>
+                          <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">Account</th>
+                          <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">Category</th>
+                          <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">Description</th>
+                          <th className="px-4 py-2.5 text-right text-xs font-medium text-muted-foreground">Amount</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {summary.recent_transactions.map((tx) => (
+                          <tr key={tx.id} className="border-b border-border last:border-0 hover:bg-muted/20">
+                            <td className="whitespace-nowrap px-4 py-3 tabular-nums text-muted-foreground">
+                              {new Date(tx.date).toLocaleDateString([], { month: "short", day: "numeric" })}
+                            </td>
+                            <td className="px-4 py-3 font-medium">{tx.account_name}</td>
+                            <td className="px-4 py-3 text-muted-foreground">
+                              {tx.category || <span className="opacity-40">—</span>}
+                            </td>
+                            <td className="max-w-xs truncate px-4 py-3 text-muted-foreground">
+                              {tx.description || <span className="opacity-40">—</span>}
+                            </td>
+                            <td
+                              className={`whitespace-nowrap px-4 py-3 text-right font-semibold tabular-nums ${
+                                tx.type === "income"
+                                  ? "text-green-600"
+                                  : tx.type === "expense"
+                                  ? "text-red-500"
+                                  : "text-blue-500"
+                              }`}
+                            >
+                              {tx.type === "income" ? "+" : tx.type === "expense" ? "−" : ""}{formatCurrency(tx.amount)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {/* Mobile cards */}
+                  <div className="flex flex-col gap-2 p-3 md:hidden">
+                    {summary.recent_transactions.map((tx) => (
+                      <div key={tx.id} className="flex items-center justify-between rounded-lg border border-border p-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium truncate">{tx.category || tx.account_name}</span>
+                            <span className="text-[10px] text-muted-foreground tabular-nums">
+                              {new Date(tx.date).toLocaleDateString([], { month: "short", day: "numeric" })}
+                            </span>
+                          </div>
+                          {tx.description && (
+                            <p className="text-xs text-muted-foreground truncate mt-0.5">{tx.description}</p>
+                          )}
+                        </div>
+                        <span
+                          className={`ml-3 text-sm font-semibold tabular-nums shrink-0 ${
+                            tx.type === "income"
+                              ? "text-green-600"
+                              : tx.type === "expense"
+                              ? "text-red-500"
+                              : "text-blue-500"
+                          }`}
+                        >
+                          {tx.type === "income" ? "+" : tx.type === "expense" ? "−" : ""}{formatCurrency(tx.amount)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </>
               )}
             </CardContent>
           </Card>
-        </div>
+
+        {/* FAB for mobile — quick add transaction */}
+        <button
+          onClick={() => openDialog("expense")}
+          className="fixed bottom-20 right-4 z-40 flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg active:scale-95 transition-transform md:hidden"
+          aria-label="Add transaction"
+        >
+          <PlusIcon className="size-6" />
+        </button>
 
         {/* Transaction Dialog (controlled) */}
         <Dialog open={addTxOpen} onOpenChange={setAddTxOpen}>
@@ -724,7 +705,6 @@ export default function DashboardPage() {
             </form>
           </DialogContent>
         </Dialog>
-      </SidebarInset>
-    </SidebarProvider>
+    </PageShell>
   )
 }
